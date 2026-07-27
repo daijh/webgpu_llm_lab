@@ -248,6 +248,8 @@ export class LLM {
 
     // Auto-detected from model
     positionIdRank          = 2;     // 2 = [1,N], 3 = [3,1,N] MRoPE
+    hasPositionIds          = true;  // model exposes a `position_ids` input
+    hasAttentionMask        = true;  // model exposes an `attention_mask` input
 
     async load(model, options) {
         this.profiler = options.profiler;
@@ -366,6 +368,13 @@ export class LLM {
             if (meta.isTensor) inputMetaMap[meta.name] = meta;
         }
 
+        // Not every exported decoder takes position_ids / attention_mask — some
+        // derive positions internally from the KV cache length. ORT rejects the
+        // whole run if a feed names an input the graph doesn't have, so only feed
+        // what the model actually declares.
+        this.hasPositionIds = inputNameSet.has("position_ids");
+        this.hasAttentionMask = inputNameSet.has("attention_mask");
+
         // Detect position_ids rank from metadata (e.g. [3, 1, N] for 3D MRoPE)
         if (inputMetaMap["position_ids"]) {
             this.positionIdRank = inputMetaMap["position_ids"].shape.length;
@@ -479,11 +488,15 @@ export class LLM {
         let   max_tokens = (options.max_tokens || 256) + seqLen;
         if (max_tokens > this.maxLen) max_tokens = this.maxLen;
 
-        // Prepare decoder feed
+        // Prepare decoder feed (only inputs the model actually declares)
         feed['input_ids'] = inputIdsTensor;
-        feed['attention_mask'] = new ort.Tensor('int64',
-            BigInt64Array.from({ length: seqLen }, () => 1n), [1, seqLen]);
-        feed['position_ids'] = this._makePositionIds(0, seqLen);
+        if (this.hasAttentionMask) {
+            feed['attention_mask'] = new ort.Tensor('int64',
+                BigInt64Array.from({ length: seqLen }, () => 1n), [1, seqLen]);
+        }
+        if (this.hasPositionIds) {
+            feed['position_ids'] = this._makePositionIds(0, seqLen);
+        }
 
         if (this.profiler) this.decoderSession.startProfiling();
 
@@ -536,11 +549,15 @@ export class LLM {
             // Extend attention mask in pre-allocated buffer (no copy — uses subarray view)
             maskBuffer[curLen] = 1n;
             curLen++;
-            feed['attention_mask'] = new ort.Tensor('int64',
-                maskBuffer.subarray(0, curLen), [1, curLen]);
+            if (this.hasAttentionMask) {
+                feed['attention_mask'] = new ort.Tensor('int64',
+                    maskBuffer.subarray(0, curLen), [1, curLen]);
+            }
 
             // Position IDs for single decode token
-            feed['position_ids'] = this._makeSinglePositionId(curLen - 1, posIdBuf);
+            if (this.hasPositionIds) {
+                feed['position_ids'] = this._makeSinglePositionId(curLen - 1, posIdBuf);
+            }
         }
 
         const endTime = performance.now();
