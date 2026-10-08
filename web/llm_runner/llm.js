@@ -157,10 +157,12 @@ function bytesIncludesAscii(bytes, str) {
 // Static GPU-buffer KV cache helpers
 // ---------------------------------------------------------------------------
 
-// Build one descriptor per KV cache pair with a *static* shape: dynamic dims
-// collapse to 1, except the sequence axis (dim 2 of key_values) which is fixed
-// to maxLen so the buffer never needs to grow.
-function buildStaticKvPairs(kvIndices, outputNames, inputMetadata, maxLen) {
+// Resolve symbolic attention dimensions from the model config. Only the batch
+// dimension defaults to 1; the sequence axis is fixed to maxLen.
+function buildStaticKvPairs(kvIndices, outputNames, inputMetadata, maxLen, config) {
+    const headSize = config.head_dim ?? config.head_size ??
+        (config.hidden_size && config.num_attention_heads
+            ? config.hidden_size / config.num_attention_heads : undefined);
     const metaByName = {};
     for (const meta of inputMetadata) {
         if (meta.isTensor) metaByName[meta.name] = meta;
@@ -173,8 +175,14 @@ function buildStaticKvPairs(kvIndices, outputNames, inputMetadata, maxLen) {
         const isKv = pastName.includes('key_values');
         const dims = meta.shape.map((d, i) => {
             if (typeof d === 'number' && d > 0) return d;
+            if (i === 0) return 1;
             if (!isSsm && isKv && i === 2) return maxLen;
-            return 1;
+            const resolved = !isSsm && isKv
+                ? (i === 1 ? config.num_key_value_heads ?? config.num_attention_heads
+                    : i === 3 ? headSize : undefined)
+                : undefined;
+            if (Number.isInteger(resolved) && resolved > 0) return resolved;
+            throw new Error(`Cannot resolve cache dimension ${i} (${d}) for ${pastName} from the model config.`);
         });
         pairs.push({ outName: outputNames[outIdx], pastName, dims, dtype: meta.type });
     }
@@ -291,6 +299,8 @@ export class LLM {
             preferred[`present.${i}.value`] = 'gpu-buffer';
             preferred[`present.${i}.conv_state`] = 'gpu-buffer';
             preferred[`present.${i}.recurrent_state`] = 'gpu-buffer';
+            preferred[`present.${i}.conv`] = 'gpu-buffer';
+            preferred[`present.${i}.recurrent`] = 'gpu-buffer';
         }
         const opt = {
             executionProviders: ["webgpu"],
@@ -390,8 +400,10 @@ export class LLM {
         const presentToPast = {};
         for (const name of this.decoderOutNames) {
             if (!name.startsWith('present.')) continue;
-            const past = 'past_key_values.' + name.slice('present.'.length);
-            if (inputNameSet.has(past)) presentToPast[name] = past;
+            const suffix = name.slice('present.'.length);
+            const past = ['past_key_values.' + suffix, 'past.' + suffix]
+                .find(candidate => inputNameSet.has(candidate));
+            if (past) presentToPast[name] = past;
         }
         this.kvIndices = this.decoderOutNames
             .map((name, i) => [i, name])
@@ -402,7 +414,7 @@ export class LLM {
         this.device = ort.env.webgpu.device;
         this.kvPairs = buildStaticKvPairs(
             this.kvIndices, this.decoderOutNames,
-            this.decoderSession.inputMetadata, this.maxLen);
+            this.decoderSession.inputMetadata, this.maxLen, { ...modelConfig, ...textConfig });
         this.kvOutToPast = {};
         for (const p of this.kvPairs) this.kvOutToPast[p.outName] = p.pastName;
         this.dtype = this.kvPairs.length ? this.kvPairs[0].dtype : "float16";

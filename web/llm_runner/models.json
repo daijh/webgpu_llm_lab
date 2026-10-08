@@ -26,6 +26,12 @@
       "onnxFile": "onnx/model_q4f16.onnx"
     },
     {
+      "label": "Qwen3.5-0.8B-Text (WebGPU)",
+      "hfId": "jianhui42/Qwen3.5-0.8B-Text-ONNX-webgpu",
+      "modelUrl": "https://huggingface.co/jianhui42/Qwen3.5-0.8B-Text-ONNX-webgpu/resolve/main",
+      "onnxFile": "onnx/model_q4f16.onnx"
+    },
+    {
       "label": "Qwen3.5-4B-Text (WebGPU)",
       "hfId": "jianhui42/Qwen3.5-4B-Text-ONNX-webgpu",
       "modelUrl": "https://huggingface.co/jianhui42/Qwen3.5-4B-Text-ONNX-webgpu/resolve/main",

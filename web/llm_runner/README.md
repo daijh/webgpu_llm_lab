@@ -113,6 +113,7 @@ To load in the browser a model needs:
 | Phi-4-mini-instruct (WebGPU) | [`jianhui42/Phi-4-mini-instruct-ONNX-webgpu`](https://huggingface.co/jianhui42/Phi-4-mini-instruct-ONNX-webgpu) | `onnx/model_q4f16.onnx` |
 | Qwen3-4B | [`onnx-community/Qwen3-4B-ONNX`](https://huggingface.co/onnx-community/Qwen3-4B-ONNX) | `onnx/model_q4f16.onnx` |
 | Qwen3-4B (WebGPU) | [`jianhui42/Qwen3-4B-ONNX-webgpu`](https://huggingface.co/jianhui42/Qwen3-4B-ONNX-webgpu) | `onnx/model_q4f16.onnx` |
+| Qwen3.5-0.8B-Text (WebGPU) | [`jianhui42/Qwen3.5-0.8B-Text-ONNX-webgpu`](https://huggingface.co/jianhui42/Qwen3.5-0.8B-Text-ONNX-webgpu) | `onnx/model_q4f16.onnx` |
 | Qwen3.5-4B-Text (WebGPU) | [`jianhui42/Qwen3.5-4B-Text-ONNX-webgpu`](https://huggingface.co/jianhui42/Qwen3.5-4B-Text-ONNX-webgpu) | `onnx/model_q4f16.onnx` |
 
 Other `onnx-community` conversions (Qwen3, Llama, Gemma, SmolLM, …) generally
