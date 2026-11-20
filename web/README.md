@@ -1,4 +1,4 @@
-# Web — ONNX Runtime Web + WebGPU
+# WebGPU LLM Lab — Browser Demos
 
 Browser-based large language model demos running entirely on-device with
 [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) and **WebGPU**.

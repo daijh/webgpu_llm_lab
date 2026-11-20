@@ -1,7 +1,7 @@
 {
-  "name": "onnxruntime-llm",
+  "name": "webgpu-llm-lab",
   "version": "0.1.0",
-  "description": "Browser-based LLM chat demos running on ONNX Runtime Web with WebGPU",
+  "description": "On-device LLM experiments with ONNX Runtime and WebGPU",
   "license": "MIT",
   "private": true,
   "type": "module",

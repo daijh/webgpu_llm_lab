@@ -1,4 +1,4 @@
-# Transformers Runner
+# Transformers Runner — WebGPU LLM Lab
 
 General-purpose LLM chat interface that runs entirely in the browser on
 **[Transformers.js](https://github.com/huggingface/transformers.js)** with WebGPU.

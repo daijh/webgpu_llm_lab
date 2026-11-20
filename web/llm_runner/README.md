@@ -1,4 +1,4 @@
-# LLM Runner
+# LLM Runner — WebGPU LLM Lab
 
 General-purpose LLM chat interface using ONNX Runtime Web with WebGPU. Works with any merged-decoder ONNX model — capabilities are auto-detected from the ONNX session metadata, so no per-model configuration is required.
 

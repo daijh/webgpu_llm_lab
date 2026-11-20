@@ -1,4 +1,6 @@
-# ONNX Runtime LLM
+# WebGPU LLM Lab
+
+On-device LLM experiments with ONNX Runtime and WebGPU.
 
 Large language model demos running entirely on-device with
 [ONNX Runtime](https://onnxruntime.ai/), organized by platform.
